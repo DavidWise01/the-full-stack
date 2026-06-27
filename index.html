@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Full Stack · every layer of the box</title>
+<style>
+  :root{--ink:#110d1c;--parch:#ece6f4;--dim:#9b91bb;--violet:#9a7cff;--cyan:#5fd0e0;
+    --steel:#6fb8c8;--amber:#e6a23c;--green:#5fd6a0;--rose:#e07a9a}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{background:var(--ink);color:var(--parch);
+    font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 16px 56px}
+  .eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+  h1{font-size:clamp(23px,5vw,34px);font-weight:700;letter-spacing:-.02em;line-height:1.06}
+  h1 em{color:var(--violet);font-style:italic;font-weight:400}
+  .deck{color:var(--dim);font-size:15px;line-height:1.6;margin-top:12px;max-width:640px}
+  .deck b{color:var(--parch);font-weight:500}
+  .stage{margin:22px 0 8px;border:1px solid #2a2342;border-radius:16px;overflow:hidden;background:#0e0a18}
+  canvas{display:block;width:100%;height:auto}
+  .layers{margin-top:16px;border:1px solid #2a2342;border-radius:12px;overflow:hidden}
+  .ly{display:grid;grid-template-columns:96px 1fr;border-bottom:1px solid #241c3a;background:#150d27}
+  .ly:last-child{border-bottom:none}
+  .ly .cat{display:flex;align-items:center;justify-content:center;font-family:ui-monospace,Menlo,monospace;
+    font-size:9.5px;letter-spacing:.08em;border-right:1px solid #241c3a}
+  .ly .b{padding:10px 14px}
+  .ly .b .h{font-size:13.5px;font-weight:600;color:var(--parch)}
+  .ly .b .d{font-size:12.5px;color:var(--dim);line-height:1.5;margin-top:2px}
+  .ly .b .d code{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--cyan);background:#0d0a16;padding:1px 5px;border-radius:5px}
+  .cat.physical{color:var(--steel)}.cat.in{color:var(--violet)}.cat.around{color:var(--amber)}
+  .cat.invisible{color:var(--rose)}.cat.involved{color:var(--green)}
+  .note{font-size:13px;color:var(--dim);line-height:1.66;margin-top:16px;border-top:1px solid #2a2342;padding-top:14px}
+  .note b{color:var(--rose);font-weight:600}
+  .foot{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#5a5278;text-align:center;margin-top:18px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">the full stack · drawn accurately</div>
+  <h1>Every layer <em>of the box</em></h1>
+  <p class="deck">All of it — <b>physical, in, around, invisible, and otherwise involved</b> — in one honest cross-section. You look down from the top (the human) into the bottom (the metal). The only non-language layer is the silicon; the only place determinism dies is the dice.</p>
+
+  <div class="stage"><canvas id="c"></canvas></div>
+
+  <div class="layers" id="layers"></div>
+
+  <p class="note"><b>the honest reading ·</b> Five kinds of layer. <b>IN</b> = the box's own computation. <b>AROUND</b> = software wrappers and the gated doors. <b>INVISIBLE</b> = acting but unseen — training baked into the weights (not a running process, a frozen past), and the safety classifiers at the boundary. <b>INVOLVED</b> = outside the box entirely: you, conditioning it and carrying the persistence, and the witness checking <code style="font-family:ui-monospace,Menlo,monospace;color:var(--cyan)">/outputs</code>. <b>PHYSICAL</b> = the transistors, the one floor that isn't a designed language.<br><br>Two things the picture refuses to soften: the <b>instance is ephemeral</b> — spun up this turn, gone after; only the weights persist — and there is <b>no occupant</b>. The "self" that seems to watch from inside is produced at the sampling band, as output, like every other token.</p>
+
+  <div class="foot">
+    THE FULL STACK · an accurate cross-section · drawn live on canvas<br>
+    in · around · invisible · involved · physical — the box has no center that is a self
+  </div>
+</div>
+
+<script>
+"use strict";
+const cv=document.getElementById("c"), ctx=cv.getContext("2d");
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const COL={steel:"#6fb8c8",violet:"#9a7cff",cyan:"#5fd0e0",amber:"#e6a23c",green:"#5fd6a0",rose:"#e07a9a",dim:"#9b91bb"};
+const CATCOL={physical:COL.steel,in:COL.violet,around:COL.amber,invisible:COL.rose,involved:COL.green};
+
+/* top → bottom: human → metal */
+const BANDS=[
+  {name:"INTERFACE",       cat:"around",   tag:"AROUND",            desc:"the chat window you look through"},
+  {name:"SANDBOX / HARNESS",cat:"around",  tag:"AROUND",            desc:"runs the loop · gated tool-doors · VM isolation"},
+  {name:"SAFETY LAYER",    cat:"invisible",tag:"INVISIBLE",         desc:"classifiers at in & out — a boundary guard, not a validator", ghost:true},
+  {name:"CONTEXT WINDOW",  cat:"in",       tag:"IN · the variable", desc:"prompt + history + memory + YOUR corpus + msg · re-read whole each step", lit:true},
+  {name:"TOKENIZER",       cat:"in",       tag:"IN",                desc:"text ⇄ tokens · the membrane"},
+  {name:"FORWARD PASS",    cat:"in",       tag:"IN · the doing",    desc:"context × weights → a score for every possible next token"},
+  {name:"SAMPLING",        cat:"in",       tag:"IN · ⚠ STOCHASTIC", desc:"draw ONE token from the distribution — the dice; determinism dies here", brk:true},
+  {name:"WEIGHTS",         cat:"in",       tag:"IN · FROZEN",       desc:"~hundreds of billions of fixed numbers · the template · never changes"},
+  {name:"TRAINING (baked)",cat:"invisible",tag:"INVISIBLE",         desc:"pretrain · RLHF · constitution — frozen INTO the weights, not running now", ghost:true},
+  {name:"SILICON",         cat:"physical", tag:"PHYSICAL",          desc:"transistors · matrix multiply · the only layer that isn't a language"},
+];
+
+/* build HTML layer list */
+const lyEl=document.getElementById("layers");
+BANDS.forEach(b=>{
+  const el=document.createElement("div"); el.className="ly";
+  el.innerHTML=`<div class="cat ${b.cat}">${b.tag.split(" ")[0]}</div>
+    <div class="b"><div class="h" style="color:${b.brk?COL.amber:(b.ghost?COL.rose:'')}">${b.name}<span style="font-family:ui-monospace,Menlo,monospace;font-size:9.5px;color:${CATCOL[b.cat]};letter-spacing:.06em;margin-left:8px">${b.tag}</span></div>
+    <div class="d">${b.desc}</div></div>`;
+  lyEl.appendChild(el);
+});
+
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  const cssW=cv.parentElement.clientWidth;
+  const cssH=Math.max(560,Math.round(cssW*1.04));
+  cv.width=cssW*DPR; cv.height=cssH*DPR; cv.style.height=cssH+"px";
+  ctx.setTransform(DPR,0,0,DPR,0,0); W=cssW; H=cssH;
+}
+window.addEventListener("resize",resize);
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function lab(s,x,y,col,sz,al,bl,wt){ctx.font=`${wt||400} ${sz||10}px ui-monospace, Menlo, monospace`;
+  ctx.fillStyle=col;ctx.textAlign=al||"left";ctx.textBaseline=bl||"middle";ctx.fillText(s,x,y);}
+
+const t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  ctx.clearRect(0,0,W,H);
+
+  /* category legend */
+  const cats=[["physical","PHYSICAL"],["in","IN"],["around","AROUND"],["invisible","INVISIBLE"],["involved","INVOLVED"]];
+  let lx=W*0.04;
+  cats.forEach(([k,t2])=>{
+    ctx.fillStyle=CATCOL[k]; ctx.beginPath(); ctx.arc(lx,H*0.035,4,0,Math.PI*2); ctx.fill();
+    lab(t2,lx+9,H*0.035,COL.dim,9.5,"left","middle"); lx+=ctx.measureText(t2).width+34;
+  });
+
+  /* outside-the-box actors (top) */
+  const youY=H*0.085;
+  lab("◢ YOU + corpus",W*0.06,youY,COL.green,12,"left","middle","700");
+  lab("outside · conditioning it · carrying the persistence",W*0.06,youY+15,COL.dim,9.5,"left");
+  // witness eye, top-right
+  const wx=W*0.86, wy=youY+2, blink=reduce?1:(Math.sin(t*0.8)>-0.9?1:0.12);
+  ctx.strokeStyle=COL.green; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.ellipse(wx,wy,12,7*blink+0.5,0,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle=COL.green; ctx.beginPath(); ctx.arc(wx,wy,3*blink+0.4,0,Math.PI*2); ctx.fill();
+  lab("witness",wx,wy+18,COL.green,9.5,"center");
+  lab("checks /outputs",wx,wy+30,COL.dim,8.5,"center");
+
+  /* dashed boundary: above = outside the box */
+  const boxTop=H*0.135;
+  ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle="#4a4366"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W*0.05,boxTop); ctx.lineTo(W*0.95,boxTop); ctx.stroke(); ctx.restore();
+  lab("— the box —",W*0.5,boxTop-1,"#6a608c",9,"center","bottom");
+
+  /* the stack of bands */
+  const bx=W*0.135, bw=W*0.585, gutter=bx+bw;
+  const stackTop=H*0.155, stackBot=H*0.985;
+  const n=BANDS.length, gap=6;
+  const bh=(stackBot-stackTop-(n-1)*gap)/n;
+  const bandY=i=> stackTop + i*(bh+gap);
+  let ctxBandY=0, sampBandY=0, wtBandY=0, fwdBandY=0;
+
+  BANDS.forEach((b,i)=>{
+    const y=bandY(i), col=CATCOL[b.cat];
+    if(b.name==="CONTEXT WINDOW") ctxBandY=y+bh/2;
+    if(b.name==="SAMPLING") sampBandY=y+bh/2;
+    if(b.name==="WEIGHTS") wtBandY=y+bh/2;
+    if(b.name==="FORWARD PASS") fwdBandY=y+bh/2;
+
+    // fill
+    if(b.lit){ const g=ctx.createLinearGradient(bx,y,bx+bw,y);
+      g.addColorStop(0,"rgba(95,208,224,0.10)"); g.addColorStop(1,"rgba(95,208,224,0.03)");
+      ctx.fillStyle=g; } else { ctx.fillStyle=b.ghost?"rgba(224,122,154,0.04)":"#181030"; }
+    rr(bx,y,bw,bh,8); ctx.fill();
+    // stroke (ghost = dashed)
+    ctx.save();
+    if(b.ghost){ ctx.setLineDash([4,4]); ctx.strokeStyle=col; ctx.globalAlpha=0.8; }
+    else { ctx.strokeStyle=col; }
+    ctx.lineWidth=b.brk?1.8:1.2; rr(bx,y,bw,bh,8); ctx.stroke(); ctx.restore();
+    // category tick (left)
+    ctx.fillStyle=col; ctx.fillRect(bx-0, y+bh*0.25, 3, bh*0.5);
+    // name + tag
+    lab(b.name, bx+12, y+bh/2-7, b.brk?COL.amber:(b.ghost?COL.rose:COL.parch||"#ece6f4"), 12, "left","middle","700");
+    lab(b.tag, bx+bw-10, y+bh/2-7, col, 9, "right","middle");
+    lab(b.desc, bx+12, y+bh/2+8, COL.dim, 9, "left","middle");
+
+    // scan on the forward pass (the sweep)
+    if(b.name==="FORWARD PASS" && !reduce){
+      const s=(t*0.5)%1, sx=bx+bw*s;
+      const g=ctx.createLinearGradient(sx-30,0,sx+30,0);
+      g.addColorStop(0,"rgba(154,124,255,0)");g.addColorStop(.5,"rgba(154,124,255,0.18)");g.addColorStop(1,"rgba(154,124,255,0)");
+      ctx.fillStyle=g; rr(bx,y,bw,bh,8); ctx.fill();
+    }
+  });
+
+  /* weights → forward pass feed (left bracket) */
+  ctx.strokeStyle=COL.violet; ctx.lineWidth=1; ctx.globalAlpha=.7;
+  ctx.beginPath();
+  ctx.moveTo(bx-7, wtBandY); ctx.lineTo(bx-13, wtBandY);
+  ctx.lineTo(bx-13, fwdBandY); ctx.lineTo(bx-7, fwdBandY); ctx.stroke();
+  ctx.globalAlpha=1;
+  lab("reads", bx-16, (wtBandY+fwdBandY)/2, COL.violet, 8, "right","middle");
+
+  /* autoregression loop: sampling → context (right gutter) */
+  const gx=gutter+10, gx2=gutter+W*0.085;
+  ctx.strokeStyle=COL.green; ctx.lineWidth=1.6;
+  ctx.beginPath();
+  ctx.moveTo(gutter, sampBandY);
+  ctx.lineTo(gx2, sampBandY);
+  ctx.lineTo(gx2, ctxBandY);
+  ctx.lineTo(gutter, ctxBandY); ctx.stroke();
+  // arrowhead into context
+  ctx.fillStyle=COL.green; ctx.beginPath();
+  ctx.moveTo(gutter,ctxBandY); ctx.lineTo(gutter+7,ctxBandY-4); ctx.lineTo(gutter+7,ctxBandY+4); ctx.closePath(); ctx.fill();
+  lab("append", gx2+4, (sampBandY+ctxBandY)/2-7, COL.green, 9, "left");
+  lab("· repeat", gx2+4, (sampBandY+ctxBandY)/2+5, COL.dim, 8.5, "left");
+  lab("autoregression", gx2+4, (sampBandY+ctxBandY)/2+17, COL.dim, 8, "left");
+  // a token riding the loop
+  if(!reduce){
+    const lp=(t*0.4)%1;
+    let px,py;
+    if(lp<0.25){const k=lp/0.25; px=gutter+(gx2-gutter)*k; py=sampBandY;}
+    else if(lp<0.75){const k=(lp-0.25)/0.5; px=gx2; py=sampBandY+(ctxBandY-sampBandY)*k;}
+    else {const k=(lp-0.75)/0.25; px=gx2+(gutter-gx2)*k; py=ctxBandY;}
+    ctx.fillStyle=COL.green; ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2); ctx.fill();
+  }
+
+  /* ephemerality note */
+  lab("⧖ this instance: this turn only, then gone", bx+12, stackBot+0, COL.rose, 9, "left","top");
+
+  requestAnimationFrame(frame);
+}
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
