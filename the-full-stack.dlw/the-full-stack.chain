@@ -4,6 +4,6 @@ slug  : the-full-stack
 seal  : f023c0b9b77bc1bcace93ae484315322bb725eb69b5f4314a5677949c9e27466
 prev  : 071d5e4e0be4274ea119fe4d330a1ce840b6e488029855236be41b1c6d6db82d
 link  : a4f5d2cd35c7a027ef69e5a43209a48ac303e9e0ed0d337be224bb612a0acf36
-head  : 3447d3a0533aaf1e29a8bdc67a9774884fb3ae9dbc8a17064b7a008ca3c4ec90
+head  : 13f9ace173ef2e60af38912ba329b4afcb5a38b84a0e4495e8d30327f8c99cc2
 
 — the tether: link = sha256(index|slug|seal|prev). the chain head commits to the whole corpus.
